@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Dhansanchay"
 include(":app")
- 
+include(":domain")
+include(":data")
