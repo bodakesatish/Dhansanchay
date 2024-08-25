@@ -51,6 +51,8 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android.core)
+    implementation(project(":data"))
+    implementation(project(":domain"))
     kapt(libs.hilt.compiler)
 
     // Navigation

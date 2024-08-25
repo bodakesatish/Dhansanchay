@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "om.dhansanchay.data"
+    namespace = "com.dhansanchay.data"
     compileSdk = 35
 
     defaultConfig {
@@ -40,6 +40,7 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(project(":domain"))
     ksp(libs.room.compiler)
 
     // Hilt
