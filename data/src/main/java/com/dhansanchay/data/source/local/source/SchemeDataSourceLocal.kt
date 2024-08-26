@@ -19,10 +19,24 @@ constructor(
 
     override suspend fun getSchemeList(): BaseOutput<List<SchemeModel>> {
         val data = schemeDao.getSchemeList()
+        return BaseOutput.Success(ApiResponseCode.SUCCESS, schemeLocalMapper.map(data))
+    }
+
+    override suspend fun getSchemeListCount(): BaseOutput<Int> {
+        val data = schemeDao.getSchemeListCount()
+        return BaseOutput.Success(ApiResponseCode.SUCCESS, data)
+    }
+
+    override suspend fun getPaginatedSchemeList(
+        currentPage: Int,
+        pageSize: Int
+    ): BaseOutput<List<SchemeModel>> {
+        val offset = currentPage * pageSize
+        val data = schemeDao.getPaginatedSchemeList(limit = pageSize, offset = offset)
         return BaseOutput.Success(ApiResponseCode.SUCCESS,schemeLocalMapper.map(data))
     }
 
-   suspend fun deleteAll() {
+    suspend fun deleteAll() {
         schemeDao.deleteSchemeList()
     }
 

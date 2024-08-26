@@ -8,5 +8,7 @@ interface DataSource {
 
     interface SchemeSource {
         suspend fun getSchemeList(): BaseOutput<List<SchemeModel>>
+        suspend fun getSchemeListCount() : BaseOutput<Int>
+        suspend fun getPaginatedSchemeList(currentPage: Int, pageSize: Int): BaseOutput<List<SchemeModel>>
     }
 }
