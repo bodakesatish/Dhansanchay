@@ -37,10 +37,11 @@ android {
 
 dependencies {
 
+    implementation(project(":domain"))
+
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    implementation(project(":domain"))
     ksp(libs.room.compiler)
 
     // Hilt
@@ -51,6 +52,10 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson) // If using Gson converter
     implementation(libs.okhttp.logging)
+
+
+    //Security
+    implementation(libs.androidx.security.crypto.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

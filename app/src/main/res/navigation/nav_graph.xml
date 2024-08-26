@@ -2,12 +2,18 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph.xml"
-    app:startDestination="@+id/fragment_login">
+    app:startDestination="@+id/fragment_login_dest">
 
     <fragment
-        android:id="@+id/fragment_login"
+        android:id="@+id/fragment_login_dest"
         android:name="com.dhansanchay.ui.login.FragmentLogin"
         android:label="Login"
+        app:defaultNavHost="true" />
+
+    <fragment
+        android:id="@+id/fragment_scheme_list_dest"
+        android:name="com.dhansanchay.ui.scheme.FragmentSchemeList"
+        android:label="Scheme List"
         app:defaultNavHost="true" />
 
 </navigation>
