@@ -4,10 +4,9 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dhansanchay.data.source.base.ApiResponseCode
 import com.dhansanchay.domain.model.ResponseCode
 import com.dhansanchay.domain.model.response.SchemeModel
-import com.dhansanchay.domain.usecases.SchemeListUseCase
+import com.dhansanchay.domain.usecases.SchemeListCountUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,7 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ViewModelLogin @Inject constructor(
 //    private val loginUseCase: LoginUseCase,
-    private val schemeListUseCase: SchemeListUseCase
+    private val schemeListUseCase: SchemeListCountUseCase
 ) : ViewModel() {
 
     private val tag = this.javaClass.simpleName
@@ -33,7 +32,7 @@ class ViewModelLogin @Inject constructor(
     fun getSchemeList() {
         Log.d(tag, "In $tag getSchemeList")
         viewModelScope.launch(Dispatchers.IO) {
-            val response = schemeListUseCase.executeUseCase(SchemeListUseCase.Request())
+            val response = schemeListUseCase.executeUseCase(SchemeListCountUseCase.Request())
             viewModelScope.launch(Dispatchers.Main) {
               when ( response.getResponseCode() ) {
                   is ResponseCode.Success -> {

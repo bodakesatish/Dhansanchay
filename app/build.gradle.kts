@@ -44,6 +44,9 @@ android {
 
 dependencies {
 
+    implementation(project(":data"))
+    implementation(project(":domain"))
+
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
@@ -51,8 +54,6 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android.core)
-    implementation(project(":data"))
-    implementation(project(":domain"))
     kapt(libs.hilt.compiler)
 
     // Navigation
@@ -64,6 +65,10 @@ dependencies {
     // Lifecycle
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+
+    //Security
+    implementation(libs.androidx.security.crypto.ktx)
+
 
     //Excel
     implementation(libs.poi)
