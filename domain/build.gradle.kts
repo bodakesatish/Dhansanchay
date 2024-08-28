@@ -39,6 +39,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android.core)
+    implementation(libs.androidx.paging.common.android)
     kapt(libs.hilt.compiler)
 
     testImplementation(libs.junit)

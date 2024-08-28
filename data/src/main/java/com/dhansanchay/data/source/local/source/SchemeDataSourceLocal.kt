@@ -45,4 +45,12 @@ constructor(
         schemeDao.insertSchemeList(data)
     }
 
+    suspend fun getPagingSchemeList(
+        pageSize : Int,
+        offset : Int
+    ): BaseOutput<List<SchemeModel>> {
+        val data = schemeDao.getPaginatedSchemeList(limit = pageSize, offset = offset)
+        return BaseOutput.Success(ApiResponseCode.SUCCESS,schemeLocalMapper.map(data))
+    }
+
 }

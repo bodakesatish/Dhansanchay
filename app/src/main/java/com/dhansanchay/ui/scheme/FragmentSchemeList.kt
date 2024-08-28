@@ -7,8 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dhansanchay.databinding.FragmentSchemeListBinding
+import com.dhansanchay.ui.scheme.adapter.PagedSchemeListAdapter
 import com.dhansanchay.ui.scheme.adapter.PaginationScrollListener
 import com.dhansanchay.ui.scheme.adapter.SchemeListAdapter
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,7 +25,11 @@ class FragmentSchemeList : Fragment() {
 
     private val viewModel : ViewModelSchemeList by viewModels()
 
-    private val adapterScheme : SchemeListAdapter = SchemeListAdapter()
+    private val adapterScheme : PagedSchemeListAdapter = PagedSchemeListAdapter()
+
+    val PAGE_START: Int = 1
+    private val isLoading = false
+    private val isLastPage = false
 
     private var isLoadingEmails = false
 
@@ -49,8 +55,10 @@ class FragmentSchemeList : Fragment() {
 
     private fun fetchSchemeList() {
         Log.i(tag , "In $tag fetchSchemeList")
-        binding.postsProgressBar.visibility = View.VISIBLE
-        viewModel.getSchemeList()
+       // binding.postsProgressBar.visibility = View.VISIBLE
+//        viewModel.getSchemeList()
+
+        viewModel.getPagedSchemeItems()
     }
 
     private fun initView() {
@@ -63,9 +71,14 @@ class FragmentSchemeList : Fragment() {
     }
 
     private fun initObserver() {
-        viewModel.schemeResponse.observe(viewLifecycleOwner) {
-            binding.postsProgressBar.visibility = View.GONE
-            adapterScheme.submitList(it)
+//        viewModel.schemeResponse.observe(viewLifecycleOwner) {
+//            binding.postsProgressBar.visibility = View.GONE
+//
+//           // adapterScheme.submitData(it.flow)
+//        }
+
+        viewModel.topRatedMovieList.asLiveData().observe(viewLifecycleOwner) {
+            adapterScheme.submitData(lifecycle, it)
         }
     }
 
