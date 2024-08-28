@@ -1,16 +1,21 @@
 package com.dhansanchay.data.repository
 
 import android.util.Log
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingSource
 import com.dhansanchay.data.mapper.base.BaseOutputRemoteMapper
 import com.dhansanchay.data.security.prefs.SessionConstants
 import com.dhansanchay.data.security.prefs.SessionManager
 import com.dhansanchay.data.source.base.BaseOutput
+import com.dhansanchay.data.source.local.paging.RoomPagingSource
 import com.dhansanchay.data.source.local.source.SchemeDataSourceLocal
 import com.dhansanchay.data.source.remote.source.SchemeDataSourceRemote
 import com.dhansanchay.domain.model.ResponseCode
 import com.dhansanchay.domain.model.response.SchemeModel
 import com.dhansanchay.domain.repository.SchemeRepository
 import com.dhansanchay.domain.usecases.PaginatedSchemeListUseCase
+import com.dhansanchay.domain.usecases.PagingSchemeListUseCase
 import com.dhansanchay.domain.usecases.SchemeListCountUseCase
 import java.util.Date
 import javax.inject.Inject
@@ -60,6 +65,23 @@ constructor(
         } else {
             response.setResponseCode(ResponseCode.Fail)
         }
+        return response
+    }
+
+    override suspend fun getPagingSchemeList(
+        currentPage: Int,
+        pageSize: Int
+    ): PagingSchemeListUseCase.Response {
+
+        Log.i(tag, "In $tag getPaginatedSchemeList")
+        val response = PagingSchemeListUseCase.Response()
+        response.setResponseCode(ResponseCode.Success)
+
+        val pager = Pager(
+            config = PagingConfig(pageSize = pageSize),
+            pagingSourceFactory = { RoomPagingSource(localDataSource) }
+        )
+        response.setData(pager.flow)
         return response
     }
 

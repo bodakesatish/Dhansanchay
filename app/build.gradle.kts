@@ -54,6 +54,9 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android.core)
+    implementation(libs.androidx.paging.common.android)
+    implementation(libs.androidx.paging.runtime.ktx)
+    implementation(libs.androidx.ui.android)
     kapt(libs.hilt.compiler)
 
     // Navigation
