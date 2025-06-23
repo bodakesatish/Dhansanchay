@@ -1,126 +1,80 @@
 package com.dhansanchay.ui.scheme.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.dhansanchay.databinding.ListRowSchemeBinding
+import com.dhansanchay.domain.model.SchemeModel
 
-//class SchemeListAdapter() : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-//
-//    private val tag = this.javaClass.simpleName
-//    var onSchemeSelected: ((scheme: SchemeModel) -> Unit)? = null
-//    var isCheckBoxEnabled = false
-//
-//    private val selectedSchemeList = mutableListOf<SchemeModel>()
-//
-//    private val diffUtil = object : DiffUtil.ItemCallback<SchemeModel>() {
-//
-//        override fun areItemsTheSame(oldItem: SchemeModel, newItem: SchemeModel): Boolean {
-//            return oldItem.id == newItem.id
-//        }
-//
-//        override fun areContentsTheSame(oldItem: SchemeModel, newItem: SchemeModel): Boolean {
-//            return oldItem == newItem
-//        }
-//
-//    }
-//
-//    private val asyncListDiffer = AsyncListDiffer(this, diffUtil)
-//
-//    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-//        val binding =
-//            ListRowSchemeBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-//        return SchemeViewHolder(binding)
-//    }
-//
-//    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-//        if (holder is SchemeViewHolder) {
-//            holder.bind(asyncListDiffer.currentList[position])
-//        }
-//    }
-//
-//    override fun getItemCount(): Int {
-//        return asyncListDiffer.currentList.size
-//    }
-//
-//    fun submitList(list: List<SchemeModel>) {
-//        val combinedList = asyncListDiffer.currentList + list
-//
-//        asyncListDiffer.submitList(combinedList)
-//    }
-//
-//    fun getSelectedSchemeList(): List<SchemeModel> {
-//        return selectedSchemeList
-//    }
-//
-//    fun clearSelectedSchemeList() {
-//        selectedSchemeList.clear()
-//    }
-//
-//    fun onClickSchemeItem(selectedScheme: SchemeModel, position: Int) {
-//        if (selectedSchemeList.contains(selectedScheme)) {
-//            selectedSchemeList.remove(selectedScheme)
-//        } else {
-//            selectedSchemeList.add(selectedScheme)
-//        }
-//        if (selectedSchemeList.isEmpty()) {
-//            isCheckBoxEnabled = false
-//            removeSelection()
-//        } else {
-//            isCheckBoxEnabled = true
-//            notifyItemRangeChanged(0, asyncListDiffer.currentList.size)
-//        }
-//    }
-//
-//    fun removeSelection() {
-//        selectedSchemeList.clear()
-//        isCheckBoxEnabled = false
-//        notifyItemRangeChanged(0, asyncListDiffer.currentList.size)
-//    }
-//
-//    fun setOnClickListener(onSchemeSelected: (SchemeModel) -> Unit) {
-//        this.onSchemeSelected = onSchemeSelected
-//    }
-//
-//    fun setOnLongClickListener(onSchemeSelected: (SchemeModel) -> Unit) {
-//        this.onSchemeSelected = onSchemeSelected
-//    }
-//
-//    inner class SchemeViewHolder(private val binding: ListRowSchemeBinding) :
-//        RecyclerView.ViewHolder(binding.root) {
-//
-//        fun bind(schemeModel: SchemeModel) {
-//
-//            with(binding) {
-//
-//                tvSchemeCode.text = schemeModel.schemeCode
-//                tvSchemeName.text = (adapterPosition+1).toString() + ". " + schemeModel.schemeName
-//                cbScheme.visibility = if (isCheckBoxEnabled) View.VISIBLE else View.GONE
-//
-//                root.setOnClickListener {
-//                    if (isCheckBoxEnabled) {
-//                        onClickSchemeItem(selectedScheme = schemeModel, position = adapterPosition)
-//                    } else {
-//                        onSchemeSelected?.invoke(schemeModel)
-//                    }
-//                }
-//
-//                root.setOnLongClickListener {
-//                    if (!isCheckBoxEnabled) {
-//                        onClickSchemeItem(selectedScheme = schemeModel, position = adapterPosition)
-//                    }
-//                    true
-//                }
-//
-//                cbScheme.setOnClickListener {
-//                    onClickSchemeItem(selectedScheme = schemeModel, position = adapterPosition)
-//                }
-//
-//            }
-//
-//        }
-//    }
-//}
+// Type alias for better readability of the click listener
+typealias OnSchemeClickListener = (schemeModel: SchemeModel) -> Unit
+
+class SchemeListAdapter(
+    private val onSchemeClicked: OnSchemeClickListener // Pass callback in constructor
+) : ListAdapter<SchemeModel, SchemeListAdapter.SchemeViewHolder>(DiffCallback) { // Specify ViewHolder type directly
+
+    // DiffCallback remains a static object, good for performance
+    object DiffCallback : DiffUtil.ItemCallback<SchemeModel>() {
+        override fun areItemsTheSame(oldItem: SchemeModel, newItem: SchemeModel): Boolean {
+            return oldItem.schemeCode == newItem.schemeCode
+        }
+
+        override fun areContentsTheSame(oldItem: SchemeModel, newItem: SchemeModel): Boolean {
+            // Ensure SchemeModel has a proper equals() implementation if it's a data class or if you need deep comparison.
+            // If SchemeModel is a data class, the default equals() will compare all properties.
+            return oldItem == newItem
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SchemeViewHolder {
+        val binding = ListRowSchemeBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return SchemeViewHolder(binding, onSchemeClicked) // Pass click listener to ViewHolder
+    }
+
+    override fun onBindViewHolder(holder: SchemeViewHolder, position: Int) { // Directly use SchemeViewHolder
+        val schemeModel = getItem(position)
+        holder.bind(schemeModel)
+    }
+
+    // ViewHolder is now a primary constructor inner class, can be static if it doesn't need adapter instance access
+    // Made it static here as it only needs the click listener passed to it.
+    class SchemeViewHolder(
+        private val binding: ListRowSchemeBinding,
+        private val onSchemeClicked: OnSchemeClickListener // Receive listener
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        // It's good practice to keep a reference to the current item if needed for multiple actions
+        // or if the click listener needed the item from the ViewHolder directly (though passing from bind is often cleaner)
+        // private var currentSchemeModel: SchemeModel? = null
+
+        init {
+            // Set the click listener on the root view once during ViewHolder creation
+            // This is generally more efficient than setting it in bind() if the listener logic doesn't change per item
+            // However, to pass the specific 'schemeModel' on click, we need it in scope.
+            // Option 1 (as you had, setting in bind): Simple and clear.
+            // Option 2 (setting in init, needs item): See below.
+        }
+
+        fun bind(schemeModel: SchemeModel) {
+            // this.currentSchemeModel = schemeModel // If needed for Option 2 click listener
+
+            binding.tvSchemeCode.text = schemeModel.schemeCode.toString()
+            // Using template string for slightly better efficiency and readability
+            binding.tvSchemeName.text = "${adapterPosition + 1}. ${schemeModel.schemeName}"
+
+            // Set the click listener for the specific item
+            binding.root.setOnClickListener {
+                // Check for NO_POSITION to be safe, though getItem(position) in onBindViewHolder usually guards this
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    onSchemeClicked(schemeModel)
+                }
+            }
+        }
+    }
+}
