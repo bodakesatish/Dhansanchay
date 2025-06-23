@@ -9,11 +9,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.dhansanchay.R
-import com.dhansanchay.data.security.prefs.SessionConstants
-import com.dhansanchay.data.security.prefs.SessionManager
 import com.dhansanchay.databinding.FragmentLoginBinding
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class FragmentLogin : Fragment() {
@@ -22,16 +19,12 @@ class FragmentLogin : Fragment() {
     private val binding get() = _binding!!
     private val viewModel : ViewModelLogin by viewModels()
 
-
-    @Inject
-    lateinit var sessionManager: SessionManager
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.i(tag, "In $tag onCreate")
-        if(sessionManager.getBoolean(SessionConstants.SESSION_REMEMBER_ME, false)) {
-            findNavController().navigate(R.id.fragment_scheme_list_dest)
-        }
+//        if(sessionManager.getBoolean(SessionConstants.SESSION_REMEMBER_ME, false)) {
+//            findNavController().navigate(R.id.fragment_scheme_list_dest)
+//        }
     }
 
     override fun onCreateView(
@@ -58,7 +51,6 @@ class FragmentLogin : Fragment() {
             }
             btnLogin.setOnClickListener {
                 if(cbRememberMe.isChecked) {
-                    sessionManager.set(SessionConstants.SESSION_REMEMBER_ME, true)
                     findNavController().navigate(R.id.fragment_scheme_list_dest)
                 }
             }

@@ -1,106 +1,126 @@
 package com.dhansanchay.data.repository
 
 import android.util.Log
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingSource
-import com.dhansanchay.data.mapper.base.BaseOutputRemoteMapper
-import com.dhansanchay.data.security.prefs.SessionConstants
-import com.dhansanchay.data.security.prefs.SessionManager
-import com.dhansanchay.data.source.base.BaseOutput
-import com.dhansanchay.data.source.local.paging.RoomPagingSource
-import com.dhansanchay.data.source.local.source.SchemeDataSourceLocal
-import com.dhansanchay.data.source.remote.source.SchemeDataSourceRemote
-import com.dhansanchay.domain.model.ResponseCode
-import com.dhansanchay.domain.model.response.SchemeModel
+import com.dhansanchay.data.source.local.SchemeLocalDataSource
+import com.dhansanchay.data.source.mapper.SchemeMapper.toDomainModelList
+import com.dhansanchay.data.source.remote.SchemeRemoteDataSource
+import com.dhansanchay.domain.utils.NetworkResult
+import com.dhansanchay.domain.model.SchemeModel
 import com.dhansanchay.domain.repository.SchemeRepository
-import com.dhansanchay.domain.usecases.PaginatedSchemeListUseCase
-import com.dhansanchay.domain.usecases.PagingSchemeListUseCase
-import com.dhansanchay.domain.usecases.SchemeListCountUseCase
-import java.util.Date
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class SchemeRepositoryImpl
-@Inject
-constructor(
-    private val sessionManager: SessionManager,
-    private val remoteDataSource: SchemeDataSourceRemote,
-    private val localDataSource: SchemeDataSourceLocal,
+class SchemeRepositoryImpl @Inject constructor(
+    private val remoteDataSource: SchemeRemoteDataSource,
+    private val localDataSource: SchemeLocalDataSource,
 ) : SchemeRepository {
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default // For CPU-bound mapping
 
     private val tag = this.javaClass.simpleName
 
+    override fun getSchemeListObservable(): Flow<NetworkResult<List<SchemeModel>>> = flow {
+        Log.d(tag, "getSchemeListObservable: Emitting loading state")
+        emit(NetworkResult.Loading) // Emit loading state initially
 
-    override suspend fun getSchemeList(): SchemeListCountUseCase.Response {
-        Log.i(tag, "In $tag getSchemeList")
-        val response = SchemeListCountUseCase.Response()
 
-        val THIRTY_SECONDS_IN_MILLIS =30000L // 30 seconds * 1000 milliseconds/second
-        val ONE_HOUR_IN_MILLIS = 3600000L // 60 minutes * 60 seconds * 1000 milliseconds
-        val sessionSyncDateTime = sessionManager.getLong(SessionConstants.SESSION_LAST_SYNC_DATE,0L)
-        Log.i(tag, "In $tag getSchemeList sessionSyncDateTime -> $sessionSyncDateTime")
-        val currentDateTime = Date().time
-        Log.i(tag, "In $tag getSchemeList currentDateTime -> $currentDateTime")
-        val difference = currentDateTime - sessionSyncDateTime
-        Log.i(tag, "In $tag getSchemeList difference -> $difference")
-
-        if(difference < THIRTY_SECONDS_IN_MILLIS) {
-            response.setResponseCode(ResponseCode.Success)
-            val localOutput = localDataSource.getSchemeListCount()
-            val responseData = if (localOutput is BaseOutput.Success) {
-                localOutput.output!!
-            } else {
-                0
+        // Try to refresh data from remote and update local cache
+        // This part runs without directly affecting the immediate emission from local below,
+        // but subsequent emissions from localDataSource.getSchemeList() will reflect the update.
+        // For more complex scenarios (e.g., showing refresh error), this can be more involved.
+        Log.d(tag, "getSchemeListObservable: Attempting to refresh data from remote")
+        when (val remoteOutput = remoteDataSource.fetchSchemeList()) {
+            is NetworkResult.Success -> {
+                val remoteApiData = remoteOutput.data
+                if (remoteApiData != null) { // Check if data from remote is not null
+                    // No need to check for isNotEmpty here, smartUpdateSchemes handles it
+                    Log.d(tag, "Remote fetch success. Calling smartUpdateSchemes with ${remoteApiData.size} items.")
+                    localDataSource.smartUpdateSchemes(remoteApiData) // Single call for smart update
+                } else {
+                    Log.d(tag, "Remote fetch success, but data field is null. Clearing local schemes.")
+                    // If null data from remote means local should be cleared
+                    localDataSource.deleteAllSchemes()
+                }
             }
-            response.setData(responseData)
-            return response
-        }
 
-        val remoteOutput = remoteDataSource.getSchemeList()
-        if(remoteOutput is BaseOutput.Success) {
-            response.setResponseCode(ResponseCode.Success)
-            localDataSource.deleteAll()
-            remoteOutput.output?.let { localDataSource.insertAll(it) }
-            response.setData(remoteOutput.output?.size)
-        } else {
-            response.setResponseCode(ResponseCode.Fail)
+            is NetworkResult.Error -> {
+                Log.i(tag, "Error: ${remoteOutput.message}")
+                // Do not emit error here if we want to fall back to local data.
+                // The Flow below will emit local data. If local is empty, then an empty list will be shown.
+                // If you need to explicitly signal a refresh error, emit(remoteOutput) here,
+                // but then the local data might not be emitted if the Flow collector stops on error.
+            }
+
+            is NetworkResult.Loading -> {
+                Log.i(tag, "Loading")
+            }
         }
-        return response
+        // Emit data from local data source and observe changes
+        // This Flow will automatically re-emit when the underlying data in Room changes
+        Log.d(tag, "getSchemeListObservable: Subscribing to local data source changes.")
+
+        localDataSource.observeSchemeList() // This is Flow<List<SchemeEntity>>
+            .map { entityList ->
+                Log.d(
+                    tag,
+                    "getSchemeListObservable: Local data changed, mapping ${entityList.size} entities to domain."
+                )
+                NetworkResult.Success(entityList.toDomainModelList()) // Map to domain model list
+            }.catch { e ->
+                Log.e(tag, "getSchemeListObservable: Error collecting from local data source", e)
+                emit(
+                    NetworkResult.Error(
+                        "Error reading from local database: ${e.localizedMessage}",
+                        e
+                    )
+                )
+            }
+            .collect { result -> // Collect from the inner flow and emit its results
+                emit(result)
+            }
+    }.flowOn(defaultDispatcher) // Use default dispatcher if mapping is CPU intensive
+
+    // Alternative: One-time fetch (less reactive, but simpler if no observation is needed)
+
+    override suspend fun getSchemeListOnce(): NetworkResult<List<SchemeModel>> {
+        Log.d(tag, "In $tag getSchemeListOnce")
+        return withContext(defaultDispatcher) { // Or ioDispatcher if remote call is dominant
+            when (val remoteOutput = remoteDataSource.fetchSchemeList()) {
+                is NetworkResult.Success -> {
+                    val data = remoteOutput.data
+                    if (data.isNotEmpty()) {
+                        localDataSource.deleteAllSchemes()
+                        localDataSource.insertSchemes(data)
+                    }
+                    // Even if remote is empty, we proceed to fetch from (potentially empty) local
+                }
+                is NetworkResult.Error -> {
+                    Log.w(tag, "Error fetching from remote: ${remoteOutput.message}. Will try local.")
+                    // Don't return error yet, try to serve from local cache
+                }
+                is NetworkResult.Loading -> {
+                    // This state might not be directly observable here if it's a one-shot suspend function
+                    // unless NetworkResult.Loading is returned from remoteDataSource.
+                    // If so, you might want to return it: return NetworkResult.Loading
+                }
+            }
+
+            try {
+                val localOutput = localDataSource.getSchemeList() // Get current list if Flow, or make DAO suspend
+                val domainOutput = localOutput.toDomainModelList()
+                NetworkResult.Success(domainOutput)
+            } catch (e: Exception) {
+                Log.e(tag, "Error fetching from local after remote attempt", e)
+                NetworkResult.Error("Failed to load schemes: ${e.localizedMessage}", e)
+            }
+        }
     }
 
-    override suspend fun getPagingSchemeList(
-        currentPage: Int,
-        pageSize: Int
-    ): PagingSchemeListUseCase.Response {
 
-        Log.i(tag, "In $tag getPaginatedSchemeList")
-        val response = PagingSchemeListUseCase.Response()
-        response.setResponseCode(ResponseCode.Success)
-
-        val pager = Pager(
-            config = PagingConfig(pageSize = pageSize),
-            pagingSourceFactory = { RoomPagingSource(localDataSource) }
-        )
-        response.setData(pager.flow)
-        return response
-    }
-
-    override suspend fun getPaginatedSchemeList(
-        currentPage: Int,
-        pageSize: Int
-    ): PaginatedSchemeListUseCase.Response {
-
-        Log.i(tag, "In $tag getPaginatedSchemeList")
-        val response = PaginatedSchemeListUseCase.Response()
-        response.setResponseCode(ResponseCode.Success)
-        val localOutput = localDataSource.getPaginatedSchemeList(currentPage = currentPage, pageSize = pageSize)
-        val responseData = if (localOutput is BaseOutput.Success) {
-            localOutput.output!!
-        } else {
-            ArrayList()
-        }
-        response.setData(responseData)
-        return response
-
-    }
 }

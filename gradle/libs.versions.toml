@@ -25,6 +25,7 @@ securityCryptoKtx = "1.1.0-alpha06"
 pagingCommonAndroid = "3.3.2"
 pagingRuntimeKtx = "3.3.2"
 uiAndroid = "1.6.8"
+swiperefreshlayout = "1.1.0"
 
 
 
@@ -64,6 +65,7 @@ androidx-security-crypto-ktx = { group = "androidx.security", name = "security-c
 androidx-paging-common-android = { group = "androidx.paging", name = "paging-common-android", version.ref = "pagingCommonAndroid" }
 androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version.ref = "pagingRuntimeKtx" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 
 
 [plugins]

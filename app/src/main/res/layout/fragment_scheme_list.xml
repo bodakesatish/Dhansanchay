@@ -30,19 +30,33 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_scheme_list"
-        android:layout_width="match_parent"
+    <!-- Wrap RecyclerView with SwipeRefreshLayout -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/et_search_scheme"
-        tools:listitem="@layout/list_row_scheme" />
+        app:layout_constraintTop_toBottomOf="@+id/et_search_scheme">
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_scheme_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/list_row_scheme" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!--
+         Consider if this ContentLoadingProgressBar is still needed or if
+         SwipeRefreshLayout's indicator is sufficient for initial load too.
+         If you want to use SwipeRefreshLayout's indicator for initial load as well,
+         you might show it programmatically. This progress bar is centered.
+    -->
     <androidx.core.widget.ContentLoadingProgressBar
-        android:id="@+id/posts_progress_bar"
+        android:id="@+id/progress_bar"
         style="@style/Widget.AppCompat.ProgressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -50,6 +64,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
