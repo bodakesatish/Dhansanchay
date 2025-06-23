@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface SchemeRepository {
     // Option 1: Return Flow for observable data (recommended for lists)
-    fun getSchemeListObservable(): Flow<NetworkResult<List<SchemeModel>>>
+    fun getSchemeListObservable(isForceRefresh: Boolean): Flow<NetworkResult<List<SchemeModel>>>
 
     // Option 2: Suspend function for one-time fetch (if UI doesn't need to observe changes directly)
     suspend fun getSchemeListOnce(): NetworkResult<List<SchemeModel>>

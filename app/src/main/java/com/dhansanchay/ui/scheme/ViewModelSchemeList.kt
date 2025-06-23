@@ -10,11 +10,13 @@ import com.dhansanchay.domain.utils.NetworkResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -35,24 +37,43 @@ class ViewModelSchemeList @Inject constructor(
 
     private val tag = this.javaClass.simpleName
 
-
-    // A more robust way often involves a trigger that the main data flow observes.
-    private val refreshTrigger = MutableSharedFlow<Unit>(replay = 0) // Or MutableStateFlow for some scenarios
+    // Trigger for initiating data loading or refreshing.
+    // Emitting an initial value ensures flatMapLatest has something to start with.
+    // The Boolean indicates if it's a forced refresh.
+    private val refreshTrigger = MutableSharedFlow<Boolean>(replay = 1).apply {
+        // Emit an initial value to trigger the first load.
+        // 'false' means the initial load is not forced, adjust if needed.
+        tryEmit(false) // Use tryEmit for non-suspending context if sure it won't fail to buffer
+        Log.d(tag, "refreshTrigger initialized and initial value emitted (false).")
+    }
+    // Alternatively, if you prefer a suspending emit (though less common for initialization like this):
+    // init {
+    //     viewModelScope.launch {
+    //         refreshTrigger.emit(false)
+    //         Log.d(tag, "refreshTrigger initial value emitted (false) from init.")
+    //     }
+    // }
 
 
     // The "master" StateFlow directly reflecting the NetworkResult from the use case.
     // This can remain private if only used to build the public uiState.
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val schemeNetworkResult: StateFlow<NetworkResult<List<SchemeModel>>> =
-        observeSchemeListUseCase() // This returns Flow<NetworkResult<List<SchemeModel>>>
+        refreshTrigger
+            .flatMapLatest { isForced -> // React to triggers
+                Log.d(tag, "flatMapLatest triggered. isForced: $isForced")
+                observeSchemeListUseCase(isForceRefresh = isForced)
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000L),
-                initialValue = NetworkResult.Loading // Assuming NetworkResult.Loading() is valid
+                initialValue = NetworkResult.Loading // Start with loading
             )
 
     // Single public StateFlow for the entire UI state
     val uiState: StateFlow<SchemeListUiState> = schemeNetworkResult
         .map { result ->
+            // Get the current UI state to preserve data during loading/error if desired
             when (result) {
                 is NetworkResult.Success -> {
                     SchemeListUiState(
@@ -64,7 +85,6 @@ class ViewModelSchemeList @Inject constructor(
                 is NetworkResult.Loading -> {
                     SchemeListUiState(
                         // You might want to keep displaying stale data while loading new data
-                        // schemes = uiState.value.schemes, // To keep previous list during load
                         isLoading = true,
                         errorMessage = null
                     )
@@ -72,7 +92,6 @@ class ViewModelSchemeList @Inject constructor(
                 is NetworkResult.Error -> {
                     SchemeListUiState(
                         // You might want to keep displaying stale data on error
-                        // schemes = uiState.value.schemes, // To keep previous list on error
                         isLoading = false,
                         errorMessage = result.message
                     )
@@ -184,6 +203,21 @@ class ViewModelSchemeList @Inject constructor(
             // You'd typically need to design your use case/repository to be refreshable
             // and expose a method here to trigger that.
             Log.w(tag, "refreshSchemes() in ViewModel needs a proper implementation to trigger data reload via the use case/repository.")
+        }
+    }
+
+    fun forceRefreshSchemes() {
+        Log.d(tag, "ViewModel forceRefreshSchemes called")
+        viewModelScope.launch {
+            refreshTrigger.emit(true)
+        }
+    }
+
+    // Optional: If you want a non-forced refresh that might use cache
+    fun refreshSchemesIfNotForced() {
+        Log.d(tag, "ViewModel refreshSchemesIfNotForced called")
+        viewModelScope.launch {
+            refreshTrigger.emit(false)
         }
     }
 

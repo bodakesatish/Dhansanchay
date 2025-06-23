@@ -59,7 +59,7 @@ class FragmentSchemeList : Fragment() {
                 // Call a refresh function in your ViewModel
                 // This assumes your ViewModel has a method like `refreshSchemes()`
                 // which will eventually update the uiState (including isLoading).
-                viewModel.refreshSchemes()
+                viewModel.forceRefreshSchemes()
             }
         }
 

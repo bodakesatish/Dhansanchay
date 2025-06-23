@@ -75,4 +75,7 @@ interface MutualFundDao {
         }
     }
 
+    @Query("SELECT COUNT(*) FROM mutual_fund_schemes")
+    fun getSchemesListSuspend() : Int
+
 }

@@ -20,6 +20,7 @@ interface SchemeLocalDataSource {
     suspend fun deleteAllSchemes()
     // Add other methods like getSchemeByCode, insertScheme, etc. if needed
     suspend fun smartUpdateSchemes(data: List<SchemeApiResponse>)
+    fun isSchemeListEmpty(): Boolean
 }
 
 @Singleton
@@ -84,6 +85,10 @@ class SchemeLocalDataSourceImpl @Inject constructor(
 //            }
             Log.d(tag, "Upserting all schemes took $timeTaken ms")
         }
+    }
+
+    override fun isSchemeListEmpty(): Boolean {
+        return dao.getSchemesListSuspend() == 0
     }
 
 }

@@ -1,5 +1,7 @@
 package com.dhansanchay.di
 
+import com.dhansanchay.data.prefs.SessionManager
+import com.dhansanchay.data.prefs.SharedPreferencesManagerImpl
 import com.dhansanchay.data.repository.SchemeRepositoryImpl
 import com.dhansanchay.data.source.local.SchemeLocalDataSource
 import com.dhansanchay.data.source.local.SchemeLocalDataSourceImpl
@@ -30,5 +32,8 @@ abstract class AppModule {
     abstract fun bindSchemeLocalDataSource(
         schemeLocalDataSourceImpl: SchemeLocalDataSourceImpl
     ): SchemeLocalDataSource
+
+    @Binds
+    internal abstract fun provideSharedPreferencesManager(sharedPreferencesManagerImpl: SharedPreferencesManagerImpl): SessionManager
 
 }

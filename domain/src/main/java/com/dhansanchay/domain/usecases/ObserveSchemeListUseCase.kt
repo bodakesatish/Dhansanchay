@@ -11,5 +11,5 @@ import javax.inject.Singleton
 class ObserveSchemeListUseCase @Inject constructor(
     private val schemeRepository: SchemeRepository
 )  {
-    operator fun invoke(): Flow<NetworkResult<List<SchemeModel>>> = schemeRepository.getSchemeListObservable()
+    operator fun invoke(isForceRefresh: Boolean = false): Flow<NetworkResult<List<SchemeModel>>> = schemeRepository.getSchemeListObservable(isForceRefresh)
 }
