@@ -35,4 +35,9 @@ object RoomModule {
     @Provides
     fun providesSchemeDao(database: DhansanchayDatabase) = database.schemeDao()
 
+    @Singleton
+    @Provides
+    fun providesSchemeMetaDao(database: DhansanchayDatabase) = database.schemeMetaDao()
+
+
 }

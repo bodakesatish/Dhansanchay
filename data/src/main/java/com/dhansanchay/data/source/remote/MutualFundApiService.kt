@@ -4,6 +4,7 @@ import com.dhansanchay.data.source.remote.model.SchemeApiResponse
 import com.dhansanchay.data.source.remote.model.SchemeDetailApiResponse
 import retrofit2.Response
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface MutualFundApiService {
@@ -14,10 +15,13 @@ interface MutualFundApiService {
     @GET("mf") // Replace with your actual API endpoint
     suspend fun getOfficialMutualFunds(): Response<List<SchemeApiResponse>>
 
+    @GET("mf/search")
+    suspend fun searchSchemeList(@Query("q") query: String) : Response<List<SchemeApiResponse>>
+
     /**
      * Fetches detailed information for a specific mutual fund scheme, including NAV history.
      * API Response example: {"meta":{...},"data":[{"date":"17-05-2025","nav":"10.00000"}],"status":"SUCCESS"}
      */
-    @GET("detail") // Replace with your actual API endpoint
-    suspend fun getMutualFundDetail(@Query("schemeCode") schemeCode: Int): Response<SchemeDetailApiResponse>
+    @GET("mf/{schemeCode}/latest") // Replace with your actual API endpoint
+    suspend fun getMutualFundDetail(@Path("schemeCode") schemeCode: Int): Response<SchemeDetailApiResponse>
 }

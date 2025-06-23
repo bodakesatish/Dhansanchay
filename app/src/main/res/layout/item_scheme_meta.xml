@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_marginBottom="4dp"
+    android:background="?attr/selectableItemBackground">
+
+    <TextView
+        android:id="@+id/textViewSchemeName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceListItem"
+        tools:text="Awesome Growth Fund"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/textViewSchemeCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceListItemSecondary"
+        tools:text="Code: 1001" />
+
+    <TextView
+        android:id="@+id/textViewFundHouse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceListItemSecondary"
+        tools:text="ABC Mutual Fund" />
+
+    <TextView
+        android:id="@+id/textViewCategory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceCaption"
+        tools:text="Category: Equity: Large Cap (Growth)" />
+    <TextView
+        android:id="@+id/textViewGrowth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceCaption"
+        tools:text="Growth Opted" />
+</LinearLayout>

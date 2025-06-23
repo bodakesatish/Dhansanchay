@@ -14,6 +14,20 @@
         android:id="@+id/fragment_scheme_list_dest"
         android:name="com.dhansanchay.ui.scheme.FragmentSchemeList"
         android:label="Scheme List"
-        app:defaultNavHost="true" />
+        app:defaultNavHost="true" >
+        <action
+            android:id="@+id/action_scheme_list_to_scheme_detail"
+            app:destination="@+id/fragment_scheme_detail_dest"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_scheme_detail_dest"
+        android:name="com.dhansanchay.ui.scheme.SchemeDetailFragment"
+        android:label="Scheme Detail" >
+        <argument
+            android:name="schemeCodeArg"
+            app:argType="integer"
+            android:defaultValue="0"/>
+    </fragment>
 
 </navigation>
