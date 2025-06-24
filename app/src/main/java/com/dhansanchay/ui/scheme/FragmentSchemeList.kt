@@ -14,9 +14,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.work.WorkInfo
 import com.dhansanchay.databinding.FragmentSchemeListBinding
 import com.dhansanchay.domain.model.SchemeModel
 import com.dhansanchay.ui.scheme.adapter.SchemeListAdapter
+import com.dhansanchay.work.AllSchemeDetailsSyncWorker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -55,6 +58,11 @@ class FragmentSchemeList : Fragment() {
 
         setupViews()
         observeViewModel()
+        binding.buttonSyncAllDetails.setOnClickListener {
+            Log.d(tag, "Sync All Details button clicked by user.")
+            showConfirmationDialogForFullSync() // Show confirmation before starting
+        }
+
     }
 
     private fun setupViews() {
@@ -70,7 +78,7 @@ class FragmentSchemeList : Fragment() {
 
         binding.swipeRefreshLayout.setOnRefreshListener {
             Log.d(tag, "Swipe to refresh triggered.")
-            viewModel.forceRefreshSchemes()
+            viewModel.forceRefreshSchemes() // This refreshes the scheme list, not the full detail sync
         }
     }
 
@@ -80,6 +88,72 @@ class FragmentSchemeList : Fragment() {
     }
 
     private fun observeViewModel() {
+        // Observe LiveData outside the repeatOnLifecycle for UI state if preferred,
+        // or keep it within if you want its observation tied to STARTED state strictly.
+        // For WorkInfo, it's often fine to observe it as long as the view is alive.
+        viewModel.syncWorkInfo.observe(viewLifecycleOwner) { workInfos ->
+            val workInfo = workInfos?.firstOrNull { it.tags.contains(AllSchemeDetailsSyncWorker.WORK_NAME) } // Ensure it's our worker
+
+            if (workInfo != null) {
+                Log.d(tag, "WorkInfo received: State=${workInfo.state}, Progress=${workInfo.progress}")
+                binding.buttonSyncAllDetails.isEnabled = !workInfo.state.isFinished && workInfo.state != WorkInfo.State.ENQUEUED && workInfo.state != WorkInfo.State.RUNNING && workInfo.state != WorkInfo.State.BLOCKED
+
+                when (workInfo.state) {
+                    WorkInfo.State.ENQUEUED -> {
+                        binding.textViewSyncStatus.text = "Sync: Scheduled..." // Assuming you add a TextView
+                        binding.buttonSyncAllDetails.isEnabled = false
+                        // Show a specific progress bar for the sync process
+                        binding.syncProgressBar.visibility = View.VISIBLE // Assuming you have a dedicated progress bar
+                        binding.syncProgressBar.isIndeterminate = true
+                    }
+                    WorkInfo.State.RUNNING -> {
+                        val current = workInfo.progress.getInt(AllSchemeDetailsSyncWorker.KEY_PROGRESS_CURRENT, 0)
+                        val total = workInfo.progress.getInt(AllSchemeDetailsSyncWorker.KEY_PROGRESS_TOTAL, 0)
+                        binding.textViewSyncStatus.text = "Sync: In Progress ($current/$total)..."
+                        binding.buttonSyncAllDetails.isEnabled = false
+                        binding.syncProgressBar.visibility = View.VISIBLE
+                        if (total > 0) {
+                            binding.syncProgressBar.isIndeterminate = false
+                            binding.syncProgressBar.max = total
+                            binding.syncProgressBar.progress = current
+                        } else {
+                            binding.syncProgressBar.isIndeterminate = true
+                        }
+                    }
+                    WorkInfo.State.SUCCEEDED -> {
+                        val totalProcessed = workInfo.progress.getInt(AllSchemeDetailsSyncWorker.KEY_PROGRESS_CURRENT, 0)
+                        binding.textViewSyncStatus.text = "Sync: Complete! ($totalProcessed items)"
+                        binding.buttonSyncAllDetails.isEnabled = true
+                        binding.syncProgressBar.visibility = View.GONE
+                        Toast.makeText(context, "All scheme details synced successfully.", Toast.LENGTH_SHORT).show()
+                    }
+                    WorkInfo.State.FAILED -> {
+                        binding.textViewSyncStatus.text = "Sync: Failed. Check logs."
+                        binding.buttonSyncAllDetails.isEnabled = true
+                        binding.syncProgressBar.visibility = View.GONE
+                        Toast.makeText(context, "Scheme detail sync failed.", Toast.LENGTH_LONG).show()
+                    }
+                    WorkInfo.State.CANCELLED -> {
+                        binding.textViewSyncStatus.text = "Sync: Cancelled."
+                        binding.buttonSyncAllDetails.isEnabled = true
+                        binding.syncProgressBar.visibility = View.GONE
+                    }
+                    WorkInfo.State.BLOCKED -> {
+                        binding.textViewSyncStatus.text = "Sync: Blocked (waiting for conditions)..."
+                        binding.buttonSyncAllDetails.isEnabled = false // Or reflect that it's waiting
+                        binding.syncProgressBar.visibility = View.VISIBLE
+                        binding.syncProgressBar.isIndeterminate = true
+                    }
+                }
+            } else {
+                // No active sync worker with that name, or it's completed and pruned.
+                // UI could reflect "Ready to sync" or similar.
+                binding.textViewSyncStatus.text = "Sync: Idle" // Or empty
+                binding.buttonSyncAllDetails.isEnabled = true
+                binding.syncProgressBar.visibility = View.GONE
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
@@ -125,4 +199,37 @@ class FragmentSchemeList : Fragment() {
         binding.rvSchemeList.adapter = null // Good practice to clear adapter
         _binding = null
     }
+
+    private fun showConfirmationDialogForFullSync() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Start Full Scheme Detail Sync?")
+            .setMessage("This will download details for all schemes and may take some time and data. Ensure you are on a stable network connection. Continue?")
+            .setNegativeButton("Cancel") { dialog, _ ->
+                Log.d(tag, "Full sync cancelled by user.")
+                dialog.dismiss()
+                // Ensure swipe refresh indicator is hidden if it was active and dialog was triggered from there
+                if (binding.swipeRefreshLayout.isRefreshing) {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                }
+            }
+            .setPositiveButton("Start Sync") { dialog, _ ->
+                Log.d(tag, "User confirmed full sync.")
+                viewModel.onTestSimpleWorkerClicked()
+                dialog.dismiss()
+                // Ensure swipe refresh indicator is hidden if it was active and dialog was triggered from there
+                if (binding.swipeRefreshLayout.isRefreshing) {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                }
+            }
+            .setOnDismissListener {
+                // This is important if the dialog was triggered by SwipeRefreshLayout
+                // to stop the refreshing animation if the user dismisses the dialog
+                // without making a choice (e.g. back button).
+                if (binding.swipeRefreshLayout.isRefreshing) {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                }
+            }
+            .show()
+    }
+
 }

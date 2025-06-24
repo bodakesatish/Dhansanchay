@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".ui.scheme.FragmentSchemeList">
 
     <include
         android:id="@+id/generic_header"
@@ -11,10 +12,13 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/et_search_scheme"
-        android:layout_width="match_parent"
+        style="?attr/textInputFilledStyle"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:endIconMode="custom"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:endIconMode="clear_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/generic_header">
@@ -24,36 +28,82 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Search Scheme"
-            android:inputType="textCapWords"
             android:imeOptions="actionDone"
-            android:maxLines="1"/>
+            android:inputType="textCapWords"
+            android:maxLines="1" />
 
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Button to trigger the full sync -->
+    <Button
+        android:id="@+id/buttonSyncAllDetails"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="Sync All Scheme Details"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/et_search_scheme" />
+
+    <!-- TextView to display the sync status -->
+    <TextView
+        android:id="@+id/textViewSyncStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="center_horizontal"
+        android:textAppearance="?attr/textAppearanceCaption"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonSyncAllDetails"
+        tools:text="Sync: In Progress (100/1000)..." />
+
+    <!-- ProgressBar for the background sync operation -->
+    <ProgressBar
+        android:id="@+id/syncProgressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewSyncStatus"
+        tools:visibility="visible"
+        tools:progress="50" />
 
     <!-- Wrap RecyclerView with SwipeRefreshLayout -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/et_search_scheme">
+        app:layout_constraintTop_toBottomOf="@+id/syncProgressBar">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_scheme_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="8dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/list_row_scheme" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!--
-         Consider if this ContentLoadingProgressBar is still needed or if
-         SwipeRefreshLayout's indicator is sufficient for initial load too.
-         If you want to use SwipeRefreshLayout's indicator for initial load as well,
-         you might show it programmatically. This progress bar is centered.
+         This ContentLoadingProgressBar is for the initial load of the RecyclerView data
+         or when a non-swipe refresh is happening for the list.
     -->
     <androidx.core.widget.ContentLoadingProgressBar
         android:id="@+id/progress_bar"
@@ -64,7 +114,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="visible"/>
+        app:layout_constraintTop_toBottomOf="@+id/generic_header"
+        app:layout_constraintVertical_bias="0.6"
+        tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

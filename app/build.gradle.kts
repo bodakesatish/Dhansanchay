@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.kapt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.androidx.navigation.safeargs)
@@ -51,14 +50,21 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.ui.android)
+    implementation(libs.androidx.swiperefreshlayout)
 
     // Hilt
     implementation(libs.hilt.android.core)
+    ksp(libs.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
+
+    //WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+
+    // Paging
     implementation(libs.androidx.paging.common.android)
     implementation(libs.androidx.paging.runtime.ktx)
-    implementation(libs.androidx.ui.android)
-    implementation(libs.androidx.swiperefreshlayout)
-    kapt(libs.hilt.compiler)
 
     // Navigation
     implementation(libs.androidx.navigation.runtime.ktx)
@@ -72,7 +78,6 @@ dependencies {
 
     //Security
     implementation(libs.androidx.security.crypto.ktx)
-
 
     //Excel
     implementation(libs.poi)

@@ -16,12 +16,18 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class AppModule {
+abstract class DataModule {
 
     @Binds
-    internal abstract fun provideSchemeRepository(impl: SchemeRepositoryImpl): SchemeRepository
+    @Singleton // Optional: if SchemeRemoteDataSourceImpl is stateless and can be a singleton
+    abstract fun bindSchemeRemoteDataSource(
+        schemeRemoteDataSourceImpl: SchemeRemoteDataSourceImpl
+    ): SchemeRemoteDataSource
 
     @Binds
-    internal abstract fun provideSharedPreferencesManager(sharedPreferencesManagerImpl: SharedPreferencesManagerImpl): SessionManager
+    @Singleton // Optional: if SchemeRemoteDataSourceImpl is stateless and can be a singleton
+    abstract fun bindSchemeLocalDataSource(
+        schemeLocalDataSourceImpl: SchemeLocalDataSourceImpl
+    ): SchemeLocalDataSource
 
 }
